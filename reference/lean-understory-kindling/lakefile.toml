@@ -1,0 +1,11 @@
+name = "kindling"
+defaultTargets = ["Kindling", "Demo", "Scale"]
+
+[[lean_lib]]
+name = "Kindling"
+
+[[lean_lib]]
+name = "Demo"
+
+[[lean_lib]]
+name = "Scale"

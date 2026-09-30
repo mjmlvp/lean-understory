@@ -1,0 +1,5 @@
+# Lake build output and fetched dependencies (also in reference/)
+.lake/
+
+# Logs written by reference/lean-understory-kindling/scripts/check-swap.sh
+build-*.log
