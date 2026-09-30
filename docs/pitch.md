@@ -129,7 +129,11 @@ succeeds, and each needs its own work and its own testing.
 Not new: the double-negation translations, proof by reflection, `Decidable` and
 MathComp's `reflect`, refinement of implementations (CoqEAL, Isabelle's code
 generator, Lean's `@[csimp]`). Possibly new is the combination: subsingleton
-interfaces as an internal substitute for parametricity, including for error
-messages; swaps that affect kernel computation and hence proofs, not only
-compiled code; and error messages that provably depend only on the interface. A
-focused literature review still has to confirm this.
+interfaces as an internal substitute for parametricity; swaps that affect kernel
+computation and hence proofs, not only compiled code; and verdicts (proved or
+refuted) that provably depend only on the interface. The evidence shown in an
+error message depends only on the interface where that evidence has exactly one
+correct form, as with the least witnesses of the proof of concept. Where several
+correct forms exist, such as two different routes or two different odd cycles in
+one graph, a swap may change which one is shown; each is still checked by the
+kernel. A focused literature review still has to confirm what is new.

@@ -46,6 +46,7 @@ reference/lean-understory-kindling/
                     the original proof of concept (frozen, read-only, not built)
 docs/               decisions.md, corrections.md, benchmarks.md, pitch.md
 docs/prompts/       assignments, numbered; once fired they are history, not instructions
+ai-scratchpad/      working notes written by the AI: fallible, not endorsed, not for the user
 scripts/            check-imports.sh and benchmark scripts
 ```
 
@@ -107,13 +108,23 @@ Dependency rules, enforced by `scripts/check-imports.sh` on every build:
 
 - Work in phases with explicit stop points. When the direction changes, propose
   first and wait for approval.
-- Small steps, each with a green build and a local commit. Never push without
-  approval.
+- Small steps, each with a green build. Commit only on explicit request, or as
+  part of a plan agreed beforehand. When a commit seems warranted, say so, and
+  keep reminding until it is decided. Never push without approval.
 - Do not widen the scope silently. After each concept, report briefly: what
   works, what does not, what was measured.
 - Record design decisions in `docs/decisions.md` so later sessions do not
   reopen them.
 - Keep this file an interface: contracts only. Details belong in `docs/`.
+
+## AI working notes
+
+- `ai-scratchpad/` holds notes the AI writes to serve the user. They are
+  fallible and not endorsed by the user: nothing in them counts as a decision
+  or a checked fact until verified.
+- Read `ai-scratchpad/README.md` before: starting or resuming work on a phase,
+  notion or design question; writing working material not meant for the user;
+  relying on, changing or moving anything in that folder.
 
 ## Style
 
