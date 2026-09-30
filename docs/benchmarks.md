@@ -6,7 +6,7 @@ cores), Lean 4.34.1, Mathlib v4.34.1. They are not checked by the build.
 ## Phase 0 baseline: what Mathlib does now (2026-09-30)
 
 Scratch experiments, not yet reproducible from the repository (benchmark
-scripts come with phase 1). "Kernel" is the profiler's cumulative
+scripts come with step 3). "Kernel" is the profiler's cumulative
 type-checking time; runs were 4–8 in parallel, so expect some noise. Mathlib
 import loading (10–35 s) is excluded. `P_n` is the path on `n` vertices,
 given as `SimpleGraph.fromRel` over an edge list on `Fin n`.

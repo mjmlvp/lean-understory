@@ -70,6 +70,10 @@ keep its verdict. A change in message wording is allowed, but must be reported.
    construction, with no verdict changing.
 4. **Distance, then bipartiteness.**
 
+Numbering: a step is one assignment, and the prompt `docs/prompts/0N-...` is
+step N; each step ends at a stop point. Phase 0 (the kickoff prompt) was step 0
+and keeps its name as history.
+
 Why this order: the proof of concept covered only claims with exactly one
 correct answer. Generalising the core first makes each graph notion an addition
 instead of its own machinery; keeping step 2 simple separates correctness from

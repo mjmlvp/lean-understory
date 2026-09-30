@@ -108,11 +108,12 @@ Dependency rules, enforced by `scripts/check-imports.sh` on every build:
 
 ## Workflow
 
-- Work in phases with explicit stop points. When the direction changes, propose
-  first and wait for approval.
+- Work in steps. A step is one assignment (`docs/prompts/0N-...` is step N) and
+  ends at an explicit stop point. When the direction changes, propose first and
+  wait for approval.
 - Work happens on `main` only; create no other branch unless the owner decides
   otherwise.
-- Small steps, each with a green build. Commit only on explicit request, or as
+- Small increments, each with a green build. Commit only on explicit request, or as
   part of a plan agreed beforehand. When a commit seems warranted, say so, and
   keep reminding until it is decided. Never push without approval.
 - At each stop point, draft the next assignment as `docs/prompts/NN-name.md`,
@@ -137,7 +138,7 @@ Dependency rules, enforced by `scripts/check-imports.sh` on every build:
 - `ai-scratchpad/` holds notes the AI writes to serve the user. They are
   fallible and not endorsed by the user: nothing in them counts as a decision
   or a checked fact until verified.
-- Read `ai-scratchpad/README.md` before: starting or resuming work on a phase,
+- Read `ai-scratchpad/README.md` before: starting or resuming work on a step,
   notion or design question; writing working material not meant for the user;
   relying on, changing or moving anything in that folder.
 
