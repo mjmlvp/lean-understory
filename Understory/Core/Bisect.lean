@@ -1,7 +1,7 @@
 import Understory.Core.Least
 
 /-!
-# Layer 2b — Upward-closed predicates: a faster implementation under the same interface
+# Layer 3b — Upward-closed predicates: a faster implementation under the same interface
 
 Bounded search costs the kernel one step per candidate. For an upward-closed
 predicate, bisection needs only logarithmically many steps. This is another

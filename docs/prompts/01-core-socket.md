@@ -1,4 +1,4 @@
-Draft by AI, not yet fired.
+Fired on 2026-09-30; historical. Lasting rules are in CLAUDE.md.
 
 # Step 1: generalise the core
 

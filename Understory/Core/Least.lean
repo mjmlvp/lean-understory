@@ -1,7 +1,5 @@
-import Understory.Core.Verdict
-
 /-!
-# Layer 2 — Least witnesses
+# Layer 3 — Least witnesses
 
 The fragment: Σ⁰₁ over `Nat` with a decidable predicate and a canonical
 witness, the least one.
@@ -15,7 +13,8 @@ is therefore a theorem (`least_congr`), not an appeal to parametricity.
 Downstream sees only `least p` and `least_spec`; `least` is irreducible, so
 proofs cannot look through it.
 
-Imports only `Init` and layer 1; uses no axioms.
+Imports only `Init`; uses no axioms. How least witnesses become a construction
+for `certify` is in `Understory.Core.LeastConstruction`.
 -/
 
 namespace Understory
@@ -157,19 +156,5 @@ theorem least_eq_bounded [DecidablePred p] [Bounded p] (s : Search p) :
   (@least_eq_val p s).trans (congrArg (@Search.val p) (Subsingleton.elim s _))
 
 end
-
-/-! ## The verdict on a claim, and its independence -/
-
-/-- Decide a claim `Q (least p)` about the interface instance `inst`, with an
-arbitrary implementation `s` doing the computing. -/
-def judge (p : Nat → Prop) (inst s : Search p) (Q : Nat → Prop) [DecidablePred Q] :
-    Verdict (Q (@least p inst)) :=
-  Verdict.ofEval Q (@least p inst) (@Search.val p s)
-    ((@least_eq_val p inst).trans (congrArg (@Search.val p) (Subsingleton.elim inst s)))
-
-/-- The verdict, and hence the message, does not depend on the computing implementation. -/
-theorem judge_indep (p : Nat → Prop) (inst s₁ s₂ : Search p)
-    (Q : Nat → Prop) [DecidablePred Q] : judge p inst s₁ Q = judge p inst s₂ Q := by
-  cases Subsingleton.elim s₁ s₂; rfl
 
 end Understory

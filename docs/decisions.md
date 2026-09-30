@@ -91,3 +91,67 @@ saying what that step needs from this one. It is marked tentative and not in
 scope, and serves only to avoid choices that would block later steps. The order
 of steps stays in D7, so the two cannot drift apart. Once a prompt is fired,
 its horizon is a snapshot of what was expected at the time.
+
+## D9 — Constructions are registered as instances of a class (2026-09-30)
+
+A construction for a claim `P` is an instance of the class
+`Understory.Construction P` (`Understory/Core/Construction.lean`), not a
+declaration tagged with an attribute `@[construction]`. Why:
+
+- instance search is already a registry indexed by the shape of the goal, and
+  it picked implementations in the proof of concept too;
+- priorities give the fallback order (the `Decidable` fallback has low
+  priority);
+- `attribute [local instance high]` swaps a construction for one section,
+  which is what a faster checker needs (D7, step 3);
+- instance arguments compose layers (a graph construction can require a
+  computable form of the graph).
+
+The umbrella term stays "construction"; the class carries the name.
+
+## D10 — The shape of a construction, and what `certify` does with it (2026-09-30)
+
+- A construction for `P` supplies evidence types for `P` and against it, a
+  `Bool` checker for each with its soundness proof, what counter-evidence
+  states in the user's vocabulary (`Says`), an untrusted `search`, and
+  optionally what stays proven if no check can run (`Known`) and a hint.
+- The hint is advice, never checked: an instance that would let the kernel
+  run the check. It is printed only in an undecided message.
+- The search runs only in compiled code; its result is turned into a term
+  (`ToExpr`) and only the checker runs in the kernel.
+- A *value* (a term such as `least p`) is proposed by an instance of
+  `Proposer t` and checked through `Construction (t = v)`. The claim with the
+  value substituted is then decided by its own construction. `Verdict.ofValue`
+  assembles the two at object level.
+- Any decidable claim has a low-priority construction (`Construction.ofDecidable`),
+  so the tactic itself has no `Decidable` fallback.
+- `certify` contains no construction-specific code. The kernel reads the
+  branch of the verdict (`Verdict.of_branch_proved v rfl`,
+  `Verdict.not_of_branch_refuted v rfl`), so reading the branch is no longer
+  trusted meta code.
+- Evidence is printed inline for now. Naming large evidence (D7, step 4) can
+  be added in the tactic's printing without changing constructions.
+
+## D11 — Message independence for least witnesses is kept (2026-09-30)
+
+When a claim has only one correct piece of evidence, the message is the same
+for every implementation whose check the kernel can run. This is what
+`docs/pitch.md` and `docs/corrections.md` (C1) state for least witnesses, and
+it is now proven for the parts `certify` actually uses (see C2):
+
+- `Verdict.ofValue_indep`: a checked value leaves one verdict, however it was
+  found (every value, not only least witnesses);
+- `Construction.Decides.unique`, from `UniqueEvidence` and `UniqueCounter`: a
+  construction whose checker accepts only one piece of evidence on each side
+  delivers one verdict. The `Decidable` fallback and the least-witness
+  construction have both properties;
+- `least_message_indep`: for a claim `Q (least p)`, two implementations whose
+  checks passed give the same verdict.
+
+This holds only among implementations the kernel can compute with. Adding one
+where there was none turns "Undecided" into an answer; that is intended, and
+branch agreement (`Verdict.branch_agree`) allows it: it rules out only proved
+against refuted. Where evidence is not unique (D5), only the verdict is
+independent, not the message. `UniqueEvidence` and `UniqueCounter` are the
+properties to prove for canonical forms (the connected component, the exact
+distance labelling).

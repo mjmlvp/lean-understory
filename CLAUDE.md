@@ -100,6 +100,8 @@ Dependency rules, enforced by `scripts/check-imports.sh` on every build:
 - Measure before claiming a gain, and compare with what Mathlib already does
   (`decide`, existing instances, `norm_num`) on the same examples.
 - Record anything once claimed and later refuted in `docs/corrections.md`.
+- Before removing or weakening a proven result, check what relies on it (docs,
+  pitch, corrections, tests), and report it.
 - Pitches, including `docs/pitch.md`, are hypotheses. Results decide what holds.
 - If a concept cannot become a computing interface, that is a result: make the
   boundary explicit.
@@ -108,6 +110,8 @@ Dependency rules, enforced by `scripts/check-imports.sh` on every build:
 
 - Work in phases with explicit stop points. When the direction changes, propose
   first and wait for approval.
+- Work happens on `main` only; create no other branch unless the owner decides
+  otherwise.
 - Small steps, each with a green build. Commit only on explicit request, or as
   part of a plan agreed beforehand. When a commit seems warranted, say so, and
   keep reminding until it is decided. Never push without approval.

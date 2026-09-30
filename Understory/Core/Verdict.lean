@@ -10,8 +10,15 @@ proves (`Verdict.says`).
 * `unknown` — a named statement `W` with a proof. `W` is not `¬P`: the third
   branch cannot be read as a refutation, but it does not lie either.
 
+Main theorems: `Verdict.says_true` (a verdict never claims anything false) and
+`Verdict.branch_agree` (two verdicts on one claim never contradict each other).
+`Verdict.ofValue` substitutes a checked value; `Verdict.ofValue_indep` shows
+the result does not depend on how the value was found.
+
 Imports only `Init`; uses no axioms.
 -/
+
+universe u
 
 namespace Understory
 
@@ -49,16 +56,50 @@ claims depends only on the certificate, not on the route to it. -/
 theorem says_transport_refuted {P Q : Prop} (e : P ↔ Q) (C : Prop) (c : C) (s : C → ¬P) :
     ((refuted C c s).transport e).says = C := rfl
 
-/-- The verdict of an evaluation: knowing `t = n`, `G n` decides `G t`. -/
-def ofEval (G : Nat → Prop) (t n : Nat) (hv : t = n) [Decidable (G n)] : Verdict (G t) :=
-  if h : G n then proved (hv ▸ h)
-  else refuted (t = n ∧ ¬G n) ⟨hv, h⟩ (fun ⟨e, h⟩ g => h (e ▸ g))
+/-! ## Branches, and branch agreement -/
 
-/-- The verdict after rewriting: knowing `G = G'` with `G'` decidable, `G'`
-decides `G`. A refutation carries the rewrites `C` along. -/
-def ofRewrite {G G' : Prop} (h : G = G') [Decidable G'] (C : Prop) (c : C) : Verdict G :=
-  if h' : G' then proved (h ▸ h')
-  else refuted (C ∧ ¬G') ⟨c, h'⟩ (fun ⟨_, n⟩ g => n (h ▸ g))
+/-- Which branch a verdict is in, forgetting the certificate. -/
+inductive Branch where
+  | proved
+  | refuted
+  | unknown
+
+/-- The branch of a verdict. -/
+def branch {P : Prop} : Verdict P → Branch
+  | proved _      => .proved
+  | refuted _ _ _ => .refuted
+  | unknown _ _   => .unknown
+
+/-- A verdict in the branch `proved` proves `P`. -/
+theorem of_branch_proved {P : Prop} : (v : Verdict P) → v.branch = .proved → P
+  | proved h, _ => h
+
+/-- A verdict in the branch `refuted` proves `¬P`. -/
+theorem not_of_branch_refuted {P : Prop} : (v : Verdict P) → v.branch = .refuted → ¬P
+  | refuted _ c s, _ => s c
+
+/-- Branch agreement: two verdicts on one claim never contradict each other,
+whatever produced them. Only `unknown` may differ from a decisive branch. -/
+theorem branch_agree {P : Prop} (v w : Verdict P) (hv : v.branch = .proved) :
+    w.branch ≠ .refuted :=
+  fun hw => not_of_branch_refuted w hw (of_branch_proved v hv)
+
+/-! ## Values -/
+
+/-- The verdict after substituting a checked value: knowing `t = n`, a verdict
+on `G n` is a verdict on `G t`. A refutation or an unknown carries `t = n`
+along, so that the message says which values were used. -/
+def ofValue {α : Sort u} (G : α → Prop) (t n : α) (h : t = n) : Verdict (G n) → Verdict (G t)
+  | proved g      => proved (h ▸ g)
+  | refuted C c s => refuted (t = n ∧ C) ⟨h, c⟩ (fun ⟨e, c⟩ g => s c (e ▸ g))
+  | unknown W w   => unknown (t = n ∧ W) ⟨h, w⟩
+
+/-- Values are canonical: whichever checked value was found for `t`, the
+verdict is the same. Messages about values therefore do not depend on the
+implementation that found them. -/
+theorem ofValue_indep {α : Sort u} (G : α → Prop) (t n₁ n₂ : α) (h₁ : t = n₁) (h₂ : t = n₂)
+    (V : (n : α) → Verdict (G n)) : ofValue G t n₁ h₁ (V n₁) = ofValue G t n₂ h₂ (V n₂) := by
+  cases h₁; cases h₂; rfl
 
 end Verdict
 end Understory

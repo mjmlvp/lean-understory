@@ -133,7 +133,8 @@ interfaces as an internal substitute for parametricity; swaps that affect kernel
 computation and hence proofs, not only compiled code; and verdicts (proved or
 refuted) that provably depend only on the interface. The evidence shown in an
 error message depends only on the interface where that evidence has exactly one
-correct form, as with the least witnesses of the proof of concept. Where several
-correct forms exist, such as two different routes or two different odd cycles in
-one graph, a swap may change which one is shown; each is still checked by the
-kernel. A focused literature review still has to confirm what is new.
+correct form and the kernel can check it, as with the least witnesses of the
+proof of concept. Where several correct forms exist, such as two different
+routes or two different odd cycles in one graph, a swap may change which one is
+shown; each is still checked by the kernel. A focused literature review still
+has to confirm what is new.

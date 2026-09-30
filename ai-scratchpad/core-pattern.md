@@ -1,18 +1,22 @@
 # Design note: the core pattern beyond least witnesses
 
 ```
-Date: 2026-09-30 (revised the same day)
-Status: draft. Input for planning step 1 (docs/prompts/01-core-socket.md);
-  the plan made there supersedes this note where they differ.
+Date: 2026-09-30 (last revised: after step 1 was built)
+Status: superseded where it differs, by decisions D9-D11 in docs/decisions.md
+  and the code of step 1 (Understory/Core/). Sections 1-5 were the input for
+  step 1; what was built is recorded there, not here. Sections 6-7 remain
+  input for step 2.
 Based on: the proof of concept (reference/lean-understory-kindling), the phase 0
   survey of Mathlib v4.34.1 (docs/benchmarks.md), conversation with the user
   (decisions D5-D7 in docs/decisions.md).
 Checked: in Mathlib v4.34.1 sources, Reachable := Nonempty (G.Walk u v)
   (Connectivity/Connected.lean:52), Colorable n := Nonempty (G.Coloring (Fin n))
   (Coloring/Vertex.lean:163), Walk derives DecidableEq (Walk/Basic.lean:54-57).
+  Step 1 built and checked: branch agreement, constructions as a class,
+  least witnesses as a construction, message independence where evidence is
+  unique (D11).
 Unchecked: the lemma names in section 6 (from the survey, not re-verified);
   the HoTT remarks in section 1 (from background knowledge, not verified here).
-  Everything else is a proposal: not proven, not built, not measured.
 ```
 
 ## Why this note
@@ -53,12 +57,18 @@ Consequences:
   definitionally irrelevant in Lean. This comes from the logic, not from
   discipline.
 - **Verdicts can see it.** `Verdict P` lives in `Type`, and `refuted C c s`
-  carries the certificate statement `C`. So `Verdict P` is not a subsingleton,
-  and `judge_indep` from the proof of concept does not carry over.
-- **What replaces it: branch agreement.** A function `Verdict.branch : Verdict P
-  → Branch` (proved / refuted / unknown) and a theorem: two verdicts on the same
-  claim never have branches proved and refuted. Proven once, for all
-  constructions.
+  carries the certificate statement `C`. So `Verdict P` is not a subsingleton.
+  For claims with non-unique evidence, message independence (`judge_indep` in
+  the proof of concept) does not carry over.
+- **What holds for all claims: branch agreement.** Two verdicts on the same
+  claim never have branches proved and refuted (built: `Verdict.branch_agree`).
+- **Where evidence is unique, message independence is kept** (built, D11):
+  among implementations whose check the kernel can run, the message does not
+  change (`Verdict.ofValue_indep`, `Construction.Decides.unique`,
+  `least_message_indep`). An earlier version of this note read as if
+  `judge_indep` were lost everywhere; that was imprecise. Note also that
+  `judge_indep` itself only covered a model of the tactic (C2 in
+  docs/corrections.md).
 - **Messages** state *a* certificate the kernel has checked, not *the*
   certificate (docs/corrections.md, C1).
 - **Certificates stay data**, never squashed into `Prop`, so they remain
@@ -113,7 +123,7 @@ construction's soundness is proven from Mathlib lemmas only.
 A presentation with sorted, duplicate-free lists is unique, so faster ways of
 computing it are provably the same presentation.
 
-**Registration: typeclasses** (proposal; to be decided and recorded in step 1).
+**Registration: typeclasses** (decided: D9).
 `Construction (P : Prop)` for claim constructions, separate classes for
 proposers and presentations. Instance search is a registry indexed by goal
 shape; it picked implementations in the proof of concept already; layers
@@ -127,11 +137,14 @@ compose (`Construction (G.Reachable a b)` needs `[Presentation G]`).
 instance diamonds with anything Mathlib adds later. `certify` is the entry
 point.
 
-**Naming** (to be decided in step 1): "construction" as the umbrella term, or
-only the claim class `Construction`. CLAUDE.md asks for "a class
-`Construction`", which fits the claim class.
+**Naming** (decided: D9): "construction" stays the umbrella term; the class
+`Construction` is the claim class.
 
 ## 4. `certify`, generalised
+
+(Built in step 1, with differences recorded in D10: the `Decidable` fallback
+is a low-priority construction rather than a step of the tactic, and the
+kernel reads the verdict's branch.)
 
 On goal `G₀`:
 
