@@ -1,0 +1,16 @@
+name = "understory"
+defaultTargets = ["Understory", "PoV", "Test"]
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4.git"
+rev = "v4.34.1"
+
+[[lean_lib]]
+name = "Understory"
+
+[[lean_lib]]
+name = "PoV"
+
+[[lean_lib]]
+name = "Test"

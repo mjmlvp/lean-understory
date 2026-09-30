@@ -1,3 +1,5 @@
+Fired on 2026-09-30; historical. Lasting rules are in CLAUDE.md.
+
 # Kickoff: build Understory, with a graph-theory proof of value
 
 This is a one-time assignment. The lasting rules are in `CLAUDE.md`; read it
