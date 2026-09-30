@@ -111,6 +111,17 @@ Dependency rules, enforced by `scripts/check-imports.sh` on every build:
 - Small steps, each with a green build. Commit only on explicit request, or as
   part of a plan agreed beforehand. When a commit seems warranted, say so, and
   keep reminding until it is decided. Never push without approval.
+- At each stop point, draft the next assignment as `docs/prompts/NN-name.md`,
+  whose first line is `Draft by AI, not yet fired.`; only the user fires it.
+  Prompts stay thin (goal, scope, stop point, what counts as done, and a short
+  tentative horizon of what later steps need from this one, marked as not in
+  scope): a fresh session must be able to carry one out from the repository
+  alone. Prompts never tell a session to read this file; it comes with every
+  session anyway.
+- A session given a prompt from `docs/prompts/` as its assignment, whose first
+  line is not yet a "Fired on" line, first replaces that first line with
+  `Fired on YYYY-MM-DD; historical. Lasting rules are in CLAUDE.md.` (today's
+  date). Reading a prompt for reference, or drafting one, does not fire it.
 - Do not widen the scope silently. After each concept, report briefly: what
   works, what does not, what was measured.
 - Record design decisions in `docs/decisions.md` so later sessions do not

@@ -1,202 +1,189 @@
 # Design note: the core pattern beyond least witnesses
 
 ```
-Date: 2026-09-30
-Status: draft; questions 1 and 4 await user decision
+Date: 2026-09-30 (revised the same day)
+Status: draft. Input for planning step 1 (docs/prompts/01-core-socket.md);
+  the plan made there supersedes this note where they differ.
 Based on: the proof of concept (reference/lean-understory-kindling), the phase 0
   survey of Mathlib v4.34.1 (docs/benchmarks.md), conversation with the user
+  (decisions D5-D7 in docs/decisions.md).
 Checked: in Mathlib v4.34.1 sources, Reachable := Nonempty (G.Walk u v)
   (Connectivity/Connected.lean:52), Colorable n := Nonempty (G.Coloring (Fin n))
   (Coloring/Vertex.lean:163), Walk derives DecidableEq (Walk/Basic.lean:54-57).
-  The lemma names in section 4 come from the survey and are unchecked here.
+Unchecked: the lemma names in section 6 (from the survey, not re-verified);
+  the HoTT remarks in section 1 (from background knowledge, not verified here).
   Everything else is a proposal: not proven, not built, not measured.
 ```
-
-**Pending revisions, from conversation with the user (2026-09-30):**
-
-- Recast section 1 in the vocabulary of truncation, since Mathlib already has
-  that structure. Evidence lives in `Type` (`Walk`, `Coloring`, cut sets) and
-  the claim is its truncation (`Nonempty`). The subsingleton principle applies
-  only to truncated things (claims, verdict branches, values). State branch
-  agreement as a function `Verdict P → branch` plus a theorem. HoTT itself is
-  ruled out: univalence is inconsistent with Lean's proof-irrelevant `Prop`
-  and with Mathlib's global choice.
-- The pitch's claim about error messages has been narrowed accordingly
-  (`docs/corrections.md`, C1).
-- Questions 2 and 3 below are technical: the AI decides them and records why in
-  `docs/decisions.md`. Questions 1 and 4 are for the user, and are to be asked
-  in plain terms (what users see), not in the terms of this note.
 
 ## Why this note
 
 The proof of concept settled the pattern for one case: a *value* with exactly
 one correct answer (`least p`). Finite graph theory asks something the proof of
 concept never had to answer. The claims are *propositions*, and their evidence
-is not unique: many paths prove reachability, many odd cycles refute
+is not unique: many walks prove reachability, many odd cycles refute
 bipartiteness. The proof of concept names this as its boundary ("for
 non-canonical witnesses this does not hold").
 
-This note settles three questions before any graph code is written:
+Questions this note answers, as proposals:
 
-1. What stays fixed when implementations are swapped, now that certificates are
-   not unique?
-2. What is a *construction*, concretely, and how is it registered?
-3. How does `certify` become general instead of hard-wired to `least`?
+1. What stays fixed when implementations are swapped, now that evidence is not
+   unique? (section 1)
+2. How are the proofs staged? (section 2)
+3. What is a construction, concretely, and how is it registered? (section 3)
+4. How does `certify` become general, and what stays unproven? (sections 4, 5)
 
-It ends with the order of work and the open questions.
+## 1. Evidence and its truncation
 
-## 1. Decision versus evidence
+Mathlib already separates evidence from claims:
 
-Split every check into two parts.
+- **Evidence lives in `Type`**, as data with many distinct elements: `G.Walk u
+  v`, `G.Coloring (Fin 2)`, and our own cut sets and labellings. `Walk` even has
+  decidable equality, so two pieces of evidence can be told apart.
+- **The claim is its truncation**: `Reachable := Nonempty (Walk u v)`,
+  `Colorable n := Nonempty (Coloring (Fin n))`. `Nonempty` forgets which
+  evidence there was.
 
-- **The decision**: whether the claim holds. There is only one correct answer,
-  so this part is canonical. This is where the subsingleton principle applies.
-- **The evidence**: the certificate that backs the decision up. It is generally
-  not unique, and different implementations may produce different evidence.
+Consequences:
 
-What this means for each layer:
-
-- **Downstream proofs cannot see the evidence at all.** Proofs of a `Prop` are
-  definitionally irrelevant in Lean. Whichever path went into a proof of
-  `G.Reachable a b`, no downstream theorem can depend on it. This comes for
-  free from the logic, not from our discipline.
+- **The subsingleton principle applies to truncated things only**: claims,
+  the branch of a verdict (proved / refuted), and values (`least p`,
+  `G.dist u v`). These have one correct answer, so swapping implementations
+  under them is a theorem.
+- **Downstream proofs cannot see evidence.** Proofs of a `Prop` are
+  definitionally irrelevant in Lean. This comes from the logic, not from
+  discipline.
 - **Verdicts can see it.** `Verdict P` lives in `Type`, and `refuted C c s`
-  carries the certificate statement `C`. So `Verdict P` is *not* a subsingleton,
-  and the proof of concept's `judge_indep` does not carry over.
-- **What replaces it: branch agreement** (to be proven). Two verdicts on the
-  same claim never disagree on a decisive branch. If one is `proved` and the
-  other `refuted`, that is a contradiction. Two implementations can differ only
-  in their evidence, or in one saying `unknown` where the other decides.
-- **Messages** are then guaranteed only to state *a* certificate the kernel has
-  checked, not *the* certificate. That is the honest boundary, and the README
-  must say so.
+  carries the certificate statement `C`. So `Verdict P` is not a subsingleton,
+  and `judge_indep` from the proof of concept does not carry over.
+- **What replaces it: branch agreement.** A function `Verdict.branch : Verdict P
+  → Branch` (proved / refuted / unknown) and a theorem: two verdicts on the same
+  claim never have branches proved and refuted. Proven once, for all
+  constructions.
+- **Messages** state *a* certificate the kernel has checked, not *the*
+  certificate (docs/corrections.md, C1).
+- **Certificates stay data**, never squashed into `Prop`, so they remain
+  visible and comparable.
 
-**Canonical evidence where it is cheap.** Some certificates can be made unique
-by strengthening their specification, and then messages are
-implementation-independent again:
+**Canonical evidence where it comes at no cost** (D5). Examples: for
+non-reachability, the connected component of `a` instead of some closed set;
+for distance lower bounds, the exact distance labelling. Walks and odd cycles
+have no cheap canonical form; any valid, checked one will do.
 
-- For non-reachability: the connected component of `a`, instead of *some*
-  closed set containing `a`.
-- For distance lower bounds: the exact distance labelling, instead of *some*
-  1-Lipschitz labelling.
+**Values** stay as in the proof of concept. For an untouched Mathlib term `t`,
+the specification of an implementation is "equals `t`": `{v // t = v}` is a
+subsingleton, and we need not look inside `t`.
 
-Paths and odd cycles have no cheap canonical form (a "least" path in some order
-is expensive to check). So canonical evidence is an option per certificate, not
-a rule.
+**HoTT** was considered and ruled out. Its reading (evidence as structure,
+claims as truncations) is what we adopt, but its machinery cannot be used:
+univalence is inconsistent with Lean's proof-irrelevant `Prop` and with
+Mathlib's global choice. Take care with the word "path": in graph theory a walk
+without repeated vertices; in HoTT an equality. Use "walk" in our docs where
+possible.
 
-**Values** (`least p`, `G.dist u v`) stay as in the proof of concept. The
-specification of an implementation is "equals the interface term", which has
-at most one answer by construction: `{v // t = v}` is a subsingleton. For an
-untouched Mathlib definition this is the natural specification, since we may
-not look inside it.
+## 2. Staged main theorems
 
-## 2. What a construction is
+Each stage has one main theorem, its specification. The stage above uses only
+that theorem, never the internals below (the design principle of CLAUDE.md).
 
-A construction is what the constructivist supplies: computable data or
-procedures under a classical concept, plus the flattening proof. Three kinds
-appear in the graph work:
+1. **Verdicts.** `Verdict.says_true` (exists): a verdict never claims anything
+   false. New: branch agreement.
+2. **Constructions.** A construction's specification is its soundness: its
+   checker accepts evidence ⇒ the claim; accepts counter-evidence ⇒ the stated
+   certificate claim ⇒ the negation. Main theorem of the stage: the judge
+   built from any construction yields a verdict whose branch is correct. Proven
+   from the specification alone, so it holds for every future construction.
+3. **The least-witness case as a construction.** Prove that it meets the
+   construction specification using only `least_spec` and `least_congr`. This
+   moves the old stage's main theorems across the boundary instead of
+   reproving anything.
+4. **Whole stack.** For least-witness claims: sound answers, and no swap flips
+   a verdict. By composition, not by a new proof.
+
+In step 2 the same pattern crosses the Mathlib boundary: the graph
+construction's soundness is proven from Mathlib lemmas only.
+
+## 3. What a construction is
 
 | kind | sits under | supplies | flattening proof |
 |---|---|---|---|
-| **claim construction** | a proposition `P` (e.g. `G.Reachable a b`) | certificate types for `P` and `¬P`, Bool checkers for both, and what each refutation certificate *says* in the user's vocabulary | checker accepts ⇒ `P`; checker accepts ⇒ the stated claim ⇒ `¬P` |
-| **value proposer** | a term `t` (e.g. `G.dist u v`) | an untrusted guess for its value | none (the guess is checked through a claim construction for `t = v`) |
-| **presentation** | an object (e.g. `G : SimpleGraph (Fin n)`) | a computable representation (sorted neighbour lists) | the representation matches `G.Adj` |
+| **claim construction** | a proposition `P` (e.g. `G.Reachable a b`) | evidence types for `P` and `¬P`, Bool checkers for both, what counter-evidence *says* in the user's vocabulary | checker accepts ⇒ `P`; checker accepts ⇒ stated claim ⇒ `¬P` |
+| **value proposer** | a term `t` (e.g. `G.dist u v`) | an untrusted guess for its value | none: the guess is checked through a claim construction for `t = v` |
+| **presentation** | an object (e.g. `G : SimpleGraph (Fin n)`) | a computable representation (sorted, duplicate-free neighbour lists) | the representation matches `G.Adj` |
 
-**The presentation can be made canonical.** Require duplicate-free sorted
-neighbour lists, and the presentation of a graph on `Fin n` is unique. Faster
-ways to compute it are then provably the same presentation.
+A presentation with sorted, duplicate-free lists is unique, so faster ways of
+computing it are provably the same presentation.
 
-**Registration: typeclasses.** The recommendation is a class
-`Construction (P : Prop)` for claim constructions, and separate classes for
-proposers and presentations. Why:
+**Registration: typeclasses** (proposal; to be decided and recorded in step 1).
+`Construction (P : Prop)` for claim constructions, separate classes for
+proposers and presentations. Instance search is a registry indexed by goal
+shape; it picked implementations in the proof of concept already; layers
+compose (`Construction (G.Reachable a b)` needs `[Presentation G]`).
 
-- Instance search *is* a registry, indexed by the shape of the goal. It already
-  picked the implementation in the proof of concept.
-- A goal like `G.Reachable a b` is found by synthesizing
-  `Construction (G.Reachable a b)`. That instance in turn needs
-  `[Presentation G]`, so the layers compose without extra machinery.
-- An attribute-based registry would need its own discrimination tree for the
-  same job.
+**Generic instances** for connectives: `¬P` swaps the two sides of `P`;
+`P ∧ Q`, `P ∨ Q`. Quantifiers over `Fin n` generically, but notions like
+`Connected` get dedicated constructions (one component certificate, not `n²`).
 
-**Generic instances** handle the logical connectives: `¬P` by swapping the two
-sides of `P`, and `P ∧ Q`, `P ∨ Q`. Quantifiers over `Fin n` get generic
-instances too, but efficient ones for notions like `Connected` are dedicated
-constructions (one component certificate, not `n²` separate ones).
+**No global `Decidable` instances** under Mathlib concepts: that avoids
+instance diamonds with anything Mathlib adds later. `certify` is the entry
+point.
 
-**No global `Decidable` instances.** We do not register `Decidable`
-instances under Mathlib concepts. That avoids instance diamonds with anything
-Mathlib adds later. `certify` is the entry point; a `Decidable` instance can be
-derived from a complete construction on request.
+**Naming** (to be decided in step 1): "construction" as the umbrella term, or
+only the claim class `Construction`. CLAUDE.md asks for "a class
+`Construction`", which fits the claim class.
 
-**Open naming question.** Is "construction" the umbrella term, with the three
-kinds above, or is only the claim class called `Construction`? `CLAUDE.md`
-asks for "a class `Construction`", which fits the claim class best.
+## 4. `certify`, generalised
 
-## 3. `certify`, generalised
-
-`certify` stays a conduit that decides nothing itself. On goal `G₀`:
+On goal `G₀`:
 
 1. **Evaluate values.** For each subterm `t` with a registered proposer: get an
-   untrusted guess `v`, obtain `Construction (t = v)`, find a proof certificate
-   (untrusted), let the kernel check it, rewrite `t` to `v`. If the construction
-   instead *refutes* `t = v`, the proposer is wrong: report that as a proposer
-   error, never as a verdict on the goal.
-2. **Decide the rest.** If `Construction G` exists for the rewritten goal `G`:
-   untrusted search proposes a certificate, the kernel checks it, and the result
-   is `proved` or `refuted`.
+   untrusted guess `v`, obtain `Construction (t = v)`, find evidence, kernel
+   check, rewrite `t` to `v`. If the construction instead refutes `t = v`, the
+   proposer is wrong: report a proposer error, never a verdict on the goal.
+2. **Decide the rest.** With `Construction G` for the rewritten goal:
+   untrusted search proposes evidence, the kernel checks, the result is proved
+   or refuted.
 3. **Fall back.** Otherwise, if `Decidable G` reduces in the kernel, decide it
    (the proof of concept's `ofRewrite`).
-4. **Otherwise say `Undecided`,** and state what is proven (the checked
-   rewrites).
+4. **Otherwise `Undecided`**, stating what is proven (the checked rewrites).
 
-A refutation message states the certificate's claim in Mathlib vocabulary. For
-large certificates it names a checked constant instead of printing everything
-inline, for example "the vertex set `_cut_1` (3 200 vertices) contains 0, not
-7, and is closed under `G.Adj`". The user can `#print` that constant. The
-message still says nothing the kernel has not checked.
+A refutation message states the certificate's claim in Mathlib vocabulary.
+Large certificates are named as checked constants rather than printed inline
+("the vertex set `_cut_1` (3 200 vertices) contains 0, not 7, and is closed
+under `G.Adj`"), so the user can `#print` them.
 
-**Acceptance test for the generalisation:** `least` becomes an ordinary
-instance (`Construction (least p = n)`, checked by kernel evaluation of
-`Search.val`). All ported tests in `Test/Core/` must pass with *unchanged
-messages*. That shows the generalisation lost nothing.
+**Acceptance test** (D6): the least-witness case becomes an ordinary
+construction, and every ported test in `Test/Core/` keeps its verdict. Changed
+message wording is allowed but reported.
 
-## 4. Contact with real Mathlib
+## 5. The seam: what stays unproven
+
+`certify` is meta-level code and is not proven. A full proof of it is not
+planned; no practical route for verifying tactics end to end in Lean is known
+to us (unchecked). It is not needed for soundness: everything `certify` shows is
+kernel-checked first, so a bug can cause a failure or a poor message, never a
+false theorem.
+
+What remains trusted: that the printed message reflects what was checked (keep
+it to Lean's own pretty-printing of the checked statement), and reading off the
+verdict's branch. Completeness (does it find evidence when there is some) is a
+quality matter for tests and measurements.
+
+Direction: move logic out of `certify` into the proven stages, until the seam
+only searches, hands evidence to a construction's checker, and prints.
+
+## 6. Contact with real Mathlib
 
 - **Lemmas only.** Bridges use Mathlib lemmas (`reachable_iff_reflTransGen`,
   `dist_le`, `two_colorable_iff_forall_loop_even`, …), never unfolding.
 - **Axiom footprint.** Bridge theorems will probably depend on
   `Classical.choice` through Mathlib's own lemma proofs. That does not block
-  computation, since the checkers are Bool functions. It does differ from the
-  proof of concept's axiom-free results, and must be reported as such: pinned
-  with `#print axioms`, and recorded in `docs/corrections.md` if anything
-  earlier suggests otherwise.
-- **Vertex type:** `Fin n` first. Other finite types later, through an explicit
-  equivalence, if at all.
-- **Unknown until measured:** the kernel cost of `Fin` arithmetic and of
-  Mathlib's own `DecidableRel` instances inside a presentation; the elaboration
-  cost of large certificate literals; whether our files need the module system.
+  computation (the checkers are Bool functions), but differs from the proof of
+  concept's axiom-free results. Pin with `#print axioms`, report it.
+- **Vertex type:** `Fin n` first.
+- **Unknown until measured:** kernel cost of `Fin` arithmetic and of Mathlib's
+  `DecidableRel` instances inside a presentation; elaboration cost of large
+  certificate literals; whether our files need the module system.
 
-## 5. Order of work
+## 7. Order of work
 
-Each step ends with a green build, a commit, and a short report.
-
-1. **Core.** `Construction`, proposers, branch agreement, generic `certify`;
-   `least` as an instance; the ported tests pass unchanged.
-2. **Minimal graph slice.** `Presentation` for `SimpleGraph (Fin n)`;
-   reachability with the *naive* checkers (path, closed set); bridges through
-   Mathlib lemmas; tiny graphs; axioms pinned. Correctness and shape only.
-3. **Measure, then swap.** Scaling table; a faster checker under the same
-   construction. Soundness is all each checker needs; branch agreement keeps
-   the decisions consistent.
-4. **Distance**, then **bipartiteness**.
-
-## Open questions for review
-
-1. Is the decision/evidence split the right reading of the subsingleton
-   principle for propositions? Should canonical evidence be the default where
-   cheap, or opt-in?
-2. Typeclasses for registration: `Construction (P : Prop)`, plus proposers and
-   presentations?
-3. Naming: which of these is "the construction"?
-4. Is "the ported tests pass with unchanged messages" the right acceptance test
-   for step 1?
+See D7 in `docs/decisions.md`.

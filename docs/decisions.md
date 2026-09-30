@@ -43,3 +43,51 @@ separate test modules instead (`Test/Core/NonDiv.lean`,
 dependency rules of `CLAUDE.md`. A module is *internal* when its module path
 contains `Internal`; `PoV` may not import those. A build is
 `scripts/check-imports.sh && lake build`.
+
+## D5 — Evidence may vary; verdicts may not (2026-09-30)
+
+A claim about a graph can have several correct pieces of evidence (two walks,
+two odd cycles). Any valid, kernel-checked piece of evidence is acceptable in a
+message. Where a canonical form comes at no cost (the connected component
+instead of some closed set; the exact distance labelling), use it. What must
+never depend on the implementation is the verdict: proved or refuted. See also
+`docs/corrections.md`, C1.
+
+## D6 — Acceptance test for generalising the core (2026-09-30)
+
+When `certify` becomes general, the least-witness case of the proof of concept
+becomes one construction among others. Every ported test in `Test/Core/` must
+keep its verdict. A change in message wording is allowed, but must be reported.
+
+## D7 — Order of work after phase 0 (2026-09-30)
+
+1. **Core, generalised.** Constructions for yes/no claims with evidence on both
+   sides; branch agreement proven once for all; `certify` general; the
+   least-witness case as one construction. No graphs yet.
+2. **Reachability, minimal.** One graph notion end to end on real Mathlib, with
+   simple (slow) checkers. Correctness and shape only.
+3. **Measure, then swap.** A scaling table; a faster checker under the same
+   construction, with no verdict changing.
+4. **Distance, then bipartiteness.**
+
+Why this order: the proof of concept covered only claims with exactly one
+correct answer. Generalising the core first makes each graph notion an addition
+instead of its own machinery; keeping step 2 simple separates correctness from
+speed.
+
+## D8 — Assignments are drafted at each stop point (2026-09-30)
+
+At each stop point the AI drafts the next assignment as
+`docs/prompts/NN-name.md`, with the first line `Draft by AI, not yet fired.`
+The user reviews it and fires it by giving it to a session as its assignment.
+That session first replaces the draft line with the "Fired on" line, as the
+kickoff prompt has it. Prompts stay thin (goal, scope, stop point, what counts
+as done); everything else lives in the repository, and a fresh session must be
+able to carry out a prompt from the repository alone. Prompts never tell a
+session to read `CLAUDE.md`: it comes with every session.
+
+Each prompt also has a short **horizon** section: one line per later step,
+saying what that step needs from this one. It is marked tentative and not in
+scope, and serves only to avoid choices that would block later steps. The order
+of steps stays in D7, so the two cannot drift apart. Once a prompt is fired,
+its horizon is a snapshot of what was expected at the time.
